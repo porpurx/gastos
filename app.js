@@ -548,10 +548,11 @@ function renderDaily() {
     (!cat || (d.cat || 'Otros') === cat) && (!method || same(d.method, method)) &&
     (!q || fold(`${d.cat || 'Otros'} ${d.note} ${d.method} ${d.amt}`).includes(q)));
   const active = all || q || cat || method;
+  lastFiltered = filtered;
   const groups = {};
   for (const d of filtered) (groups[d.date] ??= []).push(d);
   $('#list').innerHTML = (active ? `<div class="results"><span>${filtered.length} ${filtered.length === 1 ? 'resultado' : 'resultados'} · <b>${money(sum(filtered, d => d.amt))}</b></span>
-      <button type="button" class="link" data-clearfilter>Limpiar</button></div>` : '') +
+      <span class="results-actions"><button type="button" class="link" data-csvfilter>CSV</button><button type="button" class="link" data-clearfilter>Limpiar</button></span></div>` : '') +
     (Object.entries(groups).map(([date, ds]) => {
       const title = new Date(date + 'T00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'short', ...(all && { year: 'numeric' }) });
       return `<h3 class="section-title">${esc(title)}<span>${money(sum(ds, d => d.amt))}</span></h3><div class="card list">${ds.map(d => `
@@ -560,6 +561,35 @@ function renderDaily() {
           <span class="amt">${money(d.amt)}</span></div>`).join('')}</div>`;
     }).join('') || `<p class="note">${active ? 'Ningún gasto coincide con los filtros.' : 'Sin gastos diarios este mes.'}</p>`);
 }
+
+let lastFiltered = [];
+
+// CSV for Excel / Google Sheets: one row per payment-month and income-month (through December of this year)
+// and per daily expense. UTF-8 BOM so Excel shows accents; dot decimals; text that starts like a formula
+// gets a leading ' so the spreadsheet never runs it.
+function csvCell(v) {
+  if (typeof v === 'number') return String(Math.round(v * 100) / 100);
+  let s = String(v ?? '');
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+const toCsv = rows => '﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+function csvRows(daily = S.daily, recurring = true) {
+  const rows = [], end = `${new Date().getFullYear()}-12`;
+  const months = x => { const out = []; for (let m = x.from; m <= end && (!x.to || m <= x.to); m = addMonths(m, 1)) if (shows(x, m)) out.push(m); return out; };
+  if (recurring) {
+    for (const it of S.items) {
+      const L = loan(it);
+      for (const m of months(it)) rows.push([dayOf(m, it.cut || 1), m, 'Pago', it.name, it.cat, it.method, amountOf(it, m) || '',
+        it.off ? 'deshabilitado' : isPaid(it, m) ? 'pagado' : isLate(it, m) ? 'vencido' : 'pendiente', L?.number(m) ? `pago ${L.number(m)} de ${it.payments}` : '']);
+    }
+    for (const x of S.incomes) for (const m of months(x))
+      rows.push([dayOf(m, x.day || 1), m, 'Ingreso', x.name, 'Ingreso', '', amountOf(x, m) || '', isPaid(x, m) ? 'recibido' : 'pendiente', '']);
+  }
+  for (const d of daily) rows.push([d.date, d.date.slice(0, 7), 'Gasto', d.cat || 'Otros', d.cat || 'Otros', d.method, d.amt, 'pagado', d.note]);
+  return [['Fecha', 'Mes', 'Tipo', 'Concepto', 'Categoría', 'Método', 'Monto', 'Estado', 'Nota'], ...rows.sort((a, b) => a[0].localeCompare(b[0]))];
+}
+const downloadCsv = (name, rows) => download(`${name}-${today()}.csv`, toCsv(rows), 'text/csv;charset=utf-8');
 
 // Accent- and case-insensitive text, so "super" finds "Súper".
 const fold = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -590,6 +620,7 @@ $('#list').addEventListener('click', e => {
     save(); return render();
   }
   if (e.target.closest('[data-clearfilter]')) return clearFilters();
+  if (e.target.closest('[data-csvfilter]')) return downloadCsv('gastos-diarios', csvRows(lastFiltered, false));
   if (e.target.closest('[data-addincome]')) return openIncome(null);
   const inc = e.target.closest('[data-income]');
   if (inc) {
@@ -914,6 +945,7 @@ function exportData() {
   render();
 }
 $('#export').addEventListener('click', exportData);
+$('#exportCsv').addEventListener('click', () => downloadCsv('gastos', csvRows()));
 $('#import').addEventListener('change', async e => {
   try {
     const data = JSON.parse(await e.target.files[0].text());

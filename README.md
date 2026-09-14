@@ -24,6 +24,7 @@ PWA para controlar pagos mensuales: seguros, préstamos, servicios y suscripcion
 - **Recordatorios**: lista de "Próximos pagos" (hoy, mañana, en N días, vencidos), número en el icono de la app y una notificación al día al abrirla. Como no hay servidor, para avisos con la app cerrada se exporta un `.ics` con eventos mensuales y alarma para el calendario del teléfono.
 - Tema claro, oscuro o automático.
 - **Copia automática en Google Sheets** (opcional): sincroniza al abrir la app y unos segundos después de cada cambio, guarda una copia por día (últimas 60) y permite que la app instalada y Safari compartan datos.
+- **Exportar a CSV** (Ajustes) para Excel o Google Sheets: una fila por pago e ingreso de cada mes (hasta diciembre del año en curso) y por gasto diario, con fecha, mes, tipo, concepto, categoría, método, monto, estado y nota. Con filtros activos en Diario, "CSV" exporta solo los gastos filtrados.
 - Exportar/importar copia en JSON, con aviso si pasan 7 días sin copia y no hay sincronización.
 - Funciona sin conexión (service worker, cache-first). Los datos viven en `localStorage` del dispositivo.
 

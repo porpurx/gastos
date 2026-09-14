@@ -175,6 +175,7 @@ dialog .budget-row input { width: 120px; flex: none; text-align: right; padding:
 .filters input:focus, .filters select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .results { display: flex; justify-content: space-between; align-items: center; margin: 14px 6px 0; font-size: 13px; color: var(--muted); }
 .results b { color: var(--text); font-weight: 500; }
+.results-actions { display: flex; gap: 14px; }
 
 /* Incomes */
 .add-row { justify-content: center; color: var(--accent); font-size: 14px; font-weight: 500; }
