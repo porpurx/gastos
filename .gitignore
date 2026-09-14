@@ -1,0 +1,3 @@
+# Personal data exports (Ajustes > Exportar)
+*.json
+!manifest.json

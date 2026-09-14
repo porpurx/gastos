@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gastos</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f5f5f7">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <button id="prev" class="round" aria-label="Anterior">‹</button>
+  <h1 id="title"></h1>
+  <button id="next" class="round" aria-label="Siguiente">›</button>
+</header>
+
+<nav class="segmented" role="radiogroup" aria-label="Vista">
+  <label><input type="radio" name="view" value="cat" checked><span>Mes</span></label>
+  <label><input type="radio" name="view" value="method"><span>Por método</span></label>
+  <label><input type="radio" name="view" value="year"><span>Año</span></label>
+</nav>
+
+<section id="summary" class="card"></section>
+<main id="list"></main>
+
+<div class="actions">
+  <button id="add" class="primary">+ Nuevo pago</button>
+  <button id="btnSettings">Ajustes</button>
+</div>
+
+<dialog id="edit">
+  <form id="form" method="dialog" autocomplete="off">
+    <h2 id="editTitle">Pago</h2>
+    <label>Nombre <input name="nombre" required maxlength="40" placeholder="Ej. Spotify"></label>
+    <div class="split">
+      <label>Categoría <input name="cat" list="cats" placeholder="Servicios"></label>
+      <label>Pagar con <input name="method" list="methods" placeholder="WP Crédito"></label>
+    </div>
+    <div class="split">
+      <label>Día de pago <input name="cut" type="number" min="1" max="31" inputmode="numeric"></label>
+      <label>Monto fijo <input name="amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0 = variable"></label>
+    </div>
+    <div class="split">
+      <label>Desde <input name="from" type="month" required></label>
+      <label>Hasta <input name="to" type="month"></label>
+    </div>
+    <fieldset>
+      <legend id="monthLabel"></legend>
+      <label>Monto este mes <input name="monthAmt" type="number" min="0" step="0.01" inputmode="decimal"></label>
+      <label class="check"><input name="paid" type="checkbox"> Pagado</label>
+    </fieldset>
+    <div class="buttons">
+      <button type="button" id="del" class="danger">Eliminar</button>
+      <button value="cancel" formnovalidate>Cancelar</button>
+      <button value="save" class="primary">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="settings">
+  <form method="dialog">
+    <h2>Ajustes</h2>
+    <label>Tema</label>
+    <div class="segmented" role="radiogroup" aria-label="Tema">
+      <label><input type="radio" name="theme" value="light"><span>Claro</span></label>
+      <label><input type="radio" name="theme" value="dark"><span>Oscuro</span></label>
+      <label><input type="radio" name="theme" value="auto"><span>Automático</span></label>
+    </div>
+    <label>Ingreso mensual <input id="income" type="number" min="0" step="0.01" inputmode="decimal"></label>
+    <button type="button" id="export">Exportar copia (JSON)</button>
+    <label class="file">Importar copia <input type="file" id="import" accept="application/json" hidden></label>
+    <p class="note">Tus datos se guardan solo en este dispositivo. Exporta una copia de vez en cuando.</p>
+    <div class="buttons"><button class="primary">Listo</button></div>
+  </form>
+</dialog>
+
+<datalist id="cats"></datalist>
+<datalist id="methods"></datalist>
+<script src="app.js"></script>
+</body>
+</html>
