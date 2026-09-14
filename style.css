@@ -80,5 +80,14 @@ legend { font-size: 13px; font-weight: 600; padding: 0 4px; }
 label.check { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 15px; }
 label.check input { width: 20px; height: 20px; accent-color: var(--accent); }
 .file { display: block !important; text-align: center; color: var(--text) !important; font-size: 15px !important; cursor: pointer; }
+.item.off { opacity: .5; }
+.item.off .amt { text-decoration: line-through; }
+td.off, tr.off th { color: var(--muted); text-decoration: line-through; }
+label.check small { font-size: 12px; }
+.note.left { text-align: left; margin: 0; }
+code { font-size: 12px; background: var(--line); padding: 1px 4px; border-radius: 4px; }
+button.link { background: none !important; border: 0; color: var(--accent); font-weight: 500; flex: none !important; padding: 0 !important; }
+#settings .section-title { margin: 6px 4px 0; }
+#toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px; z-index: 10; max-width: calc(100% - 32px); }
 .buttons { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
 .buttons button:not(.primary):not(.danger) { background: var(--card); border: 0; border-radius: 12px; padding: 10px 16px; }

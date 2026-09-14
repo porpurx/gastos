@@ -1,5 +1,5 @@
 // Bump VERSION on every deploy, otherwise installed clients keep the old files.
-const VERSION = 'gastos-v3';
+const VERSION = 'gastos-v4';
 const FILES = ['./', 'index.html', 'style.css', 'app.js', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {

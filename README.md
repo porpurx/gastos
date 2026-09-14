@@ -9,6 +9,9 @@ PWA para controlar pagos mensuales: seguros, préstamos, servicios y suscripcion
 - **Año**: tabla tipo hoja de cálculo; verde = pagado, rojo = vencido. Tocar un mes lo abre.
 - Resumen: por pagar, total, pagado, vencido y, si capturas tu ingreso, cuánto queda disponible.
 - Cada pago tiene monto fijo, día de pago, meses desde/hasta y monto distinto para un mes concreto (servicios variables, aumentos).
+- **Deshabilitar** un pago: sigue en la lista, pero no suma en ningún total hasta reactivarlo.
+- **Diario**: gastos del día a día (gasolina, tienda, comida...) con total del mes, promedio por día y totales por categoría.
+- **Atajos** (iOS Atajos / Android): enlaces `?gasto=150&cat=Gasolina&metodo=Efectivo&nota=Pemex` registran el gasto al abrirse; con `?gasto=&cat=Gasolina` se abre el formulario prellenado. Los enlaces se copian desde Ajustes.
 - Tema claro, oscuro o automático.
 - Exportar/importar copia en JSON.
 - Funciona sin conexión (service worker, cache-first). Los datos viven solo en `localStorage` del dispositivo.
