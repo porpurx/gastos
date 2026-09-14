@@ -1,5 +1,5 @@
 // Bump VERSION on every deploy, otherwise installed clients keep the old files.
-const VERSION = 'gastos-v4';
+const VERSION = 'gastos-v6';
 const FILES = ['./', 'index.html', 'style.css', 'app.js', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -8,6 +8,11 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION).map(k => caches.delete(k)))));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(clients.matchAll({ type: 'window' }).then(cs => cs[0] ? cs[0].focus() : clients.openWindow('./')));
 });
 
 self.addEventListener('fetch', e => {

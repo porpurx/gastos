@@ -24,6 +24,7 @@
   <label><input type="radio" name="view" value="year"><span>Año</span></label>
 </nav>
 
+<section id="alerts"></section>
 <section id="summary" class="card"></section>
 <main id="list"></main>
 
@@ -93,6 +94,12 @@
       <label><input type="radio" name="theme" value="auto"><span>Automático</span></label>
     </div>
     <label>Ingreso mensual <input id="income" type="number" min="0" step="0.01" inputmode="decimal"></label>
+
+    <h3 class="section-title">Recordatorios</h3>
+    <label>Avisar días antes del pago <input id="remindDays" type="number" min="0" max="15" inputmode="numeric"></label>
+    <button type="button" id="btnNotify">Activar notificaciones</button>
+    <button type="button" id="btnCalendar">Agregar recordatorios al calendario</button>
+    <p class="note left">Las notificaciones salen al abrir la app (en iPhone, solo con la app instalada en la pantalla de inicio). Para que te avise aunque no la abras, agrega los recordatorios al calendario; si cambias pagos, vuelve a agregarlos.</p>
 
     <h3 class="section-title">Atajos</h3>
     <div class="card list" id="shortcutList"></div>

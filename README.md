@@ -12,6 +12,7 @@ PWA para controlar pagos mensuales: seguros, préstamos, servicios y suscripcion
 - **Deshabilitar** un pago: sigue en la lista, pero no suma en ningún total hasta reactivarlo.
 - **Diario**: gastos del día a día (gasolina, tienda, comida...) con total del mes, promedio por día y totales por categoría.
 - **Atajos** (iOS Atajos / Android): enlaces `?gasto=150&cat=Gasolina&metodo=Efectivo&nota=Pemex` registran el gasto al abrirse; con `?gasto=&cat=Gasolina` se abre el formulario prellenado. Los enlaces se copian desde Ajustes.
+- **Recordatorios**: lista de "Próximos pagos" (hoy, mañana, en N días, vencidos), número en el icono de la app y una notificación al día al abrirla. Como no hay servidor, para avisos con la app cerrada se exporta un `.ics` con eventos mensuales y alarma para el calendario del teléfono.
 - Tema claro, oscuro o automático.
 - Exportar/importar copia en JSON.
 - Funciona sin conexión (service worker, cache-first). Los datos viven solo en `localStorage` del dispositivo.

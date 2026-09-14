@@ -61,7 +61,101 @@ const view = () => $('[name=view]:checked').value;
 const setView = v => { $(`[name=view][value=${v}]`).checked = true; };
 const yearMonths = () => MONTHS.map((_, i) => `${month.slice(0, 4)}-${String(i + 1).padStart(2, '0')}`);
 
+// Reminders: unpaid, active payments due within S.remindDays (overdue ones from last month too).
+const daysIn = m => new Date(+m.slice(0, 4), +m.slice(5), 0).getDate();
+const dueDate = (it, m) => new Date(+m.slice(0, 4), +m.slice(5) - 1, Math.min(it.cut, daysIn(m)));
+const when = days => days < 0 ? `Vencido hace ${-days} ${days === -1 ? 'día' : 'días'}` : days === 0 ? 'Hoy' : days === 1 ? 'Mañana' : `En ${days} días`;
+function upcoming() {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const cur = ym(now), out = [];
+  for (const m of [addMonths(cur, -1), cur, addMonths(cur, 1)]) for (const it of S.items) {
+    if (!it.cut || !counts(it, m) || isPaid(it, m)) continue;
+    const days = Math.round((dueDate(it, m) - now) / 864e5);
+    if (days <= (S.remindDays ?? 2)) out.push({ it, m, days });
+  }
+  return out.sort((a, b) => a.days - b.days);
+}
+
+function renderAlerts() {
+  const list = upcoming();
+  navigator.setAppBadge?.(list.length).catch(() => {});
+  $('#alerts').innerHTML = list.length ? `<h3 class="section-title">Próximos pagos</h3><div class="card list">${list.map(({ it, m, days }) => `
+    <div class="item ${days < 0 ? 'late' : ''}" data-alert="${it.id}" data-month="${m}">
+      <div class="info"><b>${esc(it.name)}</b><small>${[when(days), it.method].filter(Boolean).map(esc).join(' · ')}</small></div>
+      <span class="amt">${amountOf(it, m) ? money(amountOf(it, m)) : 'sin monto'}</span></div>`).join('')}</div>` : '';
+}
+
+$('#alerts').addEventListener('click', e => {
+  const el = e.target.closest('[data-alert]');
+  if (!el) return;
+  month = el.dataset.month;
+  setView('cat');
+  render();
+  openEdit(S.items.find(x => x.id === el.dataset.alert));
+});
+
+// No server, so no scheduled push: notify once a day when the app is opened.
+async function notify() {
+  const list = upcoming();
+  if (!list.length || !('Notification' in window) || Notification.permission !== 'granted' || S.notified === today()) return;
+  S.notified = today();
+  save();
+  const body = list.map(({ it, m, days }) => `${when(days)}: ${it.name}${amountOf(it, m) ? ' ' + money(amountOf(it, m)) : ''}`).join('\n');
+  const reg = await navigator.serviceWorker?.getRegistration();
+  if (reg) reg.showNotification('Pagos próximos', { body, icon: 'icon-192.png', badge: 'icon-192.png', tag: 'pagos' });
+  else new Notification('Pagos próximos', { body, icon: 'icon-192.png' });
+}
+
+function renderNotifyBtn() {
+  const p = 'Notification' in window ? Notification.permission : 'unsupported';
+  const btn = $('#btnNotify');
+  btn.textContent = { granted: 'Notificaciones activadas', denied: 'Notificaciones bloqueadas (actívalas en el navegador)', default: 'Activar notificaciones', unsupported: 'Notificaciones no disponibles aquí' }[p];
+  btn.disabled = p !== 'default';
+}
+$('#btnNotify').addEventListener('click', async () => {
+  await Notification.requestPermission();
+  renderNotifyBtn();
+  S.notified = null;
+  notify();
+});
+$('#remindDays').addEventListener('change', e => { S.remindDays = Math.max(0, +e.target.value || 0); S.notified = null; save(); render(); });
+
+// Calendar file: one monthly recurring event per active payment, with an alarm at 9:00.
+function calendarFile() {
+  const pad = n => String(n).padStart(2, '0');
+  const text = s => String(s).replace(/[\\;,]/g, c => '\\' + c);
+  const d = S.remindDays ?? 2;
+  const trigger = d ? `-PT${d * 24 - 9}H` : 'PT9H'; // relative to midnight of the payment day
+  const cur = ym(new Date()), stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+  const events = S.items.filter(it => it.cut && !it.off && (!it.to || it.to >= cur)).map(it => {
+    const start = it.from > cur ? it.from : cur;
+    // ponytail: days 29-31 use the 28th so the event exists every month (reminds a bit early); BYSETPOS rules if exact dates matter.
+    const day = Math.min(it.cut, 28);
+    const title = text(`Pago: ${it.name}${it.amount ? ' ' + money(it.amount) : ''}`);
+    return ['BEGIN:VEVENT', `UID:${it.id}@gastos`, `DTSTAMP:${stamp}`,
+      `DTSTART;VALUE=DATE:${start.replace('-', '')}${pad(day)}`,
+      `RRULE:FREQ=MONTHLY${it.to ? `;UNTIL=${it.to.replace('-', '')}${pad(daysIn(it.to))}` : ''}`,
+      `SUMMARY:${title}`, 'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${title}`, `TRIGGER:${trigger}`, 'END:VALARM', 'END:VEVENT'].join('\r\n');
+  });
+  return events.length && ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Gastos//ES', 'CALSCALE:GREGORIAN', ...events, 'END:VCALENDAR'].join('\r\n');
+}
+$('#btnCalendar').addEventListener('click', () => {
+  const ics = calendarFile();
+  if (!ics) return alert('No hay pagos activos con día de pago.');
+  download(`pagos-${today()}.ics`, ics, 'text/calendar');
+});
+
+function download(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
 function render() {
+  renderAlerts();
   $('#title').textContent = view() === 'year' ? month.slice(0, 4) : label(month);
   const months = view() === 'year' ? yearMonths() : [month];
   if (view() === 'daily') return renderDaily();
@@ -298,17 +392,13 @@ applyTheme();
 $('#btnSettings').addEventListener('click', () => {
   $('#income').value = S.income || '';
   $(`[name=theme][value=${S.theme ?? 'light'}]`).checked = true;
+  $('#remindDays').value = S.remindDays ?? 2;
+  renderNotifyBtn();
   renderShortcuts();
   $('#settings').showModal();
 });
 $('#income').addEventListener('change', e => { S.income = +e.target.value || 0; save(); render(); });
-$('#export').addEventListener('click', () => {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' }));
-  a.download = `gastos-${today()}.json`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-});
+$('#export').addEventListener('click', () => download(`gastos-${today()}.json`, JSON.stringify(S, null, 1), 'application/json'));
 $('#import').addEventListener('change', async e => {
   try {
     const data = JSON.parse(await e.target.files[0].text());
@@ -319,9 +409,10 @@ $('#import').addEventListener('change', async e => {
   e.target.value = '';
 });
 
-document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { render(); notify(); } });
 render();
 runLink();
+notify();
 
 navigator.storage?.persist?.();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js');
